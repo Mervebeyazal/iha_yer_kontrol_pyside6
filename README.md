@@ -18,7 +18,7 @@ python -m venv .venv
 - `arayuz/ana_pencere.py`: menü, bağlantı şeridi ve durum çubuğu.
 - `arayuz/gorev_sayfasi.py`: nokta formu, tablo ve görev düzenleme.
 - `modeller/rota_noktasi.py`: rota noktası veri modeli.
-- `servisler/`: ileride dosya işlemleri ve haberleşme servisleri.
+- `servisler/gorev_dosyasi.py`: sürümlü JSON görev kaydı.
 - `tests/`: görev düzenleme kontrolleri.
 
 ## Mevcut özellikler
@@ -26,8 +26,16 @@ python -m venv .venv
 Nokta ekleme, fare/klavye ile seçme, güncelleme, silme ve sıralama.
 Seçim olmadığında güncelleme, silme ve taşıma düğmeleri kapanır.
 
-Harita henüz yer tutucudur. Gerçek uçak bağlantısı, dosyaya kaydetme ve
-görev aktarımı eklenmemiştir. Noktalar uygulama kapanınca kaybolur.
+“Görevi kaydet” düğmesi listeye uygulanmış noktaları JSON dosyasına yazar.
+Dosya yazımı başarısızsa önceki dosya korunur. Bu biçim uygulamaya özeldir;
+Mission Planner dosyası değildir. Formdaki uygulanmamış değişiklikler kaydedilmez.
+“Görev aç” dosyanın sürümünü, alanlarını, koordinatlarını, komutlarını ve
+formun desteklediği irtifa aralığını doğrular. Hatalı dosyada mevcut rota korunur.
+Mevcut rota varsa değiştirmeden önce onay istenir. Bilinmeyen alanlar sessizce
+atılmaz; dosya reddedilir. Boş görev dosyaları desteklenir.
+
+Harita henüz yer tutucudur. Gerçek uçak bağlantısı ve görev aktarımı
+eklenmemiştir. Kaydedilmeyen noktalar uygulama kapanınca kaybolur.
 İrtifa aralığı yalnızca form sınırıdır; yarışma veya güvenli uçuş sınırı değildir.
 
 ## Kontroller
