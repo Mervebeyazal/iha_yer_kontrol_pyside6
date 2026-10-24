@@ -6,7 +6,6 @@ from PySide6.QtWidgets import QApplication
 
 # arayuz klasöründeki ana_pencere.py dosyasından kendi sınıfımızı alıyoruz.
 from arayuz.ana_pencere import AnaPencere
-from arayuz.gorev_sayfasi import GorevSayfasi
 
 
 # Uygulamayı başlatan adımları tek bir fonksiyonda topluyoruz.
