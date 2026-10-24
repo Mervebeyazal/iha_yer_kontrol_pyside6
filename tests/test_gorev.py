@@ -2,6 +2,10 @@ import os
 os.environ.setdefault('QT_QPA_PLATFORM', 'offscreen')
 
 import unittest
+import json
+import tempfile
+from pathlib import Path
+from unittest.mock import patch
 from PySide6.QtWidgets import QApplication
 from arayuz.ana_pencere import AnaPencere
 
@@ -69,6 +73,34 @@ class GorevTesti(unittest.TestCase):
         self.sayfa.secili_noktayi_sil()
         self.assertEqual(self.sayfa.rota_tablosu.rowCount(), 0)
         self.secim_kapali()
+
+    def test_kaydet_iptal_ve_hata(self):
+        self.ekle(41)
+        with tempfile.TemporaryDirectory(dir=Path.cwd()) as klasor:
+            yol = Path(klasor) / 'görev.json'
+            with patch('arayuz.gorev_sayfasi.QFileDialog.getSaveFileName', return_value=(str(yol), '')):
+                self.sayfa.kaydet_butonu.click()
+            veri = json.loads(yol.read_text(encoding='utf-8'))
+            self.assertEqual(veri['surum'], 1)
+            self.assertEqual(veri['rota_noktalari'][0]['enlem'], 41)
+            with patch('arayuz.gorev_sayfasi.QFileDialog.getSaveFileName', return_value=('', '')), patch('arayuz.gorev_sayfasi.gorevi_kaydet') as kaydet:
+                self.sayfa.gorevi_dosyaya_kaydet()
+                kaydet.assert_not_called()
+            with patch('arayuz.gorev_sayfasi.QFileDialog.getSaveFileName', return_value=(str(yol), '')), patch('arayuz.gorev_sayfasi.gorevi_kaydet', side_effect=OSError('Disk hatası')), patch('arayuz.gorev_sayfasi.QMessageBox.warning') as uyari:
+                self.sayfa.gorevi_dosyaya_kaydet()
+                uyari.assert_called_once()
+
+    def test_yazma_hatasinda_eski_dosya_korunur(self):
+        from servisler.gorev_dosyasi import gorevi_kaydet
+        self.ekle(41)
+        with tempfile.TemporaryDirectory(dir=Path.cwd()) as klasor:
+            yol = Path(klasor) / 'gorev.json'
+            yol.write_text('önceki içerik', encoding='utf-8')
+            with patch('servisler.gorev_dosyasi.os.replace', side_effect=OSError('Yazma hatası')):
+                with self.assertRaises(OSError):
+                    gorevi_kaydet(yol, self.sayfa.rota_noktalari)
+            self.assertEqual(yol.read_text(encoding='utf-8'), 'önceki içerik')
+            self.assertEqual(list(Path(klasor).iterdir()), [yol])
 
 
 if __name__ == '__main__':

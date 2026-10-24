@@ -14,10 +14,13 @@ from PySide6.QtWidgets import (
     QTableWidgetItem,
     QAbstractItemView,
     QHeaderView,
+    QFileDialog,
+    QMessageBox,
 )
 
 # Verileri tutan sınıfımız; arayüz kodundan ayrı.
 from modeller.rota_noktasi import RotaNoktasi
+from servisler.gorev_dosyasi import gorevi_kaydet
 
 
 class GorevSayfasi(QWidget):
@@ -48,6 +51,14 @@ class GorevSayfasi(QWidget):
 
         duzen = QVBoxLayout(panel)
         duzen.addWidget(QLabel("GÖREV / ROTA PLANLAMA"))
+
+        # Dosya yazma servisten, dosya seçimi arayüzden yönetilir.
+        dosya_duzeni = QHBoxLayout()
+        self.kaydet_butonu = QPushButton("Görevi kaydet")
+        self.kaydet_butonu.clicked.connect(self.gorevi_dosyaya_kaydet)
+        dosya_duzeni.addWidget(self.kaydet_butonu)
+        dosya_duzeni.addStretch()
+        duzen.addLayout(dosya_duzeni)
 
         # Gerçek harita eklenene kadar geçici yer tutucu.
         self.harita_yer_tutucu = QLabel(
@@ -227,6 +238,30 @@ class GorevSayfasi(QWidget):
         duzen.addStretch()
 
         return panel
+
+    def gorevi_dosyaya_kaydet(self):
+        # İkinci dönüş değeri seçilen filtredir; burada kullanmıyoruz.
+        dosya_yolu, _ = QFileDialog.getSaveFileName(
+            self, "Görevi kaydet", "gorev.json",
+            "JSON görev dosyası (*.json)",
+        )
+        # İptal edilirse veri veya dosya değiştirilmez.
+        if not dosya_yolu:
+            return
+        try:
+            gorevi_kaydet(dosya_yolu, self.rota_noktalari)
+        except (OSError, ValueError, TypeError) as hata:
+            QMessageBox.warning(
+                self, "Kaydetme başarısız",
+                f"Görev dosyası kaydedilemedi:\n{hata}",
+            )
+            return
+        # Başarı yalnızca dosya yazıldıktan sonra bildirilir.
+        self.form_sonucu.setText(
+            f"Görev kaydedildi.\n\n"
+            f"Nokta sayısı: {len(self.rota_noktalari)}\n"
+            f"Dosya: {dosya_yolu}"
+        )
 
     def rota_noktasi_ekle(self):
         # Formdaki değerlerden yeni bir nokta oluşturuyoruz.
