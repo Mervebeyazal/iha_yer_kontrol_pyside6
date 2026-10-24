@@ -1,1 +1,0 @@
-# iha_yer_kontrol_pyside6
