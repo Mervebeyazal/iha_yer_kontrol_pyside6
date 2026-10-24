@@ -20,7 +20,7 @@ from PySide6.QtWidgets import (
 
 # Verileri tutan sınıfımız; arayüz kodundan ayrı.
 from modeller.rota_noktasi import RotaNoktasi
-from servisler.gorev_dosyasi import gorevi_kaydet
+from servisler.gorev_dosyasi import gorevi_kaydet, gorevi_ac
 
 
 class GorevSayfasi(QWidget):
@@ -54,6 +54,9 @@ class GorevSayfasi(QWidget):
 
         # Dosya yazma servisten, dosya seçimi arayüzden yönetilir.
         dosya_duzeni = QHBoxLayout()
+        self.ac_butonu = QPushButton("Görev aç")
+        self.ac_butonu.clicked.connect(self.gorevi_dosyadan_ac)
+        dosya_duzeni.addWidget(self.ac_butonu)
         self.kaydet_butonu = QPushButton("Görevi kaydet")
         self.kaydet_butonu.clicked.connect(self.gorevi_dosyaya_kaydet)
         dosya_duzeni.addWidget(self.kaydet_butonu)
@@ -238,6 +241,37 @@ class GorevSayfasi(QWidget):
         duzen.addStretch()
 
         return panel
+
+    def gorevi_dosyadan_ac(self):
+        dosya_yolu, _ = QFileDialog.getOpenFileName(
+            self, "Görev aç", "", "JSON görev dosyası (*.json)",
+        )
+        if not dosya_yolu:
+            return
+        try:
+            # Önce doğrula; bozuk dosya mevcut rotayı değiştirmesin.
+            yeni_noktalar = gorevi_ac(dosya_yolu)
+        except (OSError, ValueError, TypeError) as hata:
+            QMessageBox.warning(self, "Görev açılamadı", str(hata))
+            return
+        if self.rota_noktalari:
+            cevap = QMessageBox.question(
+                self, "Mevcut rotayı değiştir",
+                "Açılan görev mevcut rotanın yerini alacak. "
+                "Kaydetmediğin değişiklikler kaybolabilir. Devam edilsin mi?",
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                QMessageBox.StandardButton.No,
+            )
+            if cevap != QMessageBox.StandardButton.Yes:
+                return
+        # Onay ve doğrulama tamamlandıktan sonra tek seferde uygula.
+        self.rota_noktalari = yeni_noktalar
+        self.rota_tablosunu_guncelle()
+        self.nokta_secimini_temizle()
+        self.form_sonucu.setText(
+            f"Görev açıldı.\nNokta sayısı: {len(yeni_noktalar)}\n"
+            "Nokta bilgilerini görmek için tablodan seç."
+        )
 
     def gorevi_dosyaya_kaydet(self):
         # İkinci dönüş değeri seçilen filtredir; burada kullanmıyoruz.
